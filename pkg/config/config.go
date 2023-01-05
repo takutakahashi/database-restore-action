@@ -1,5 +1,11 @@
 package config
 
+import (
+	"io/ioutil"
+
+	"gopkg.in/yaml.v3"
+)
+
 type Config struct {
 	DatabaseType  DatabaseType          `json:"database_type"`
 	DatabaseImage string                `json:"database_image"`
@@ -30,3 +36,15 @@ type DatabaseType string
 var (
 	MySQL DatabaseType = "mysql"
 )
+
+func Load(p string) (*Config, error) {
+	ret := &Config{}
+	buf, err := ioutil.ReadFile(p)
+	if err != nil {
+		return nil, err
+	}
+	if err := yaml.Unmarshal(buf, ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}

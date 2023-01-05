@@ -9,6 +9,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/takutakahashi/database-restore-action/pkg/config"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -24,7 +25,15 @@ to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		logrus.Fatal("error")
+		cfgpath, err := cmd.Flags().GetString("config")
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		cfg, err := config.Load(cfgpath)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		logrus.Info(cfg)
 	},
 }
 
@@ -38,5 +47,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringP("db-type", "t", "mysql", "Database type. ex: mysql")
+	rootCmd.Flags().StringP("config", "c", "./config.yaml", "config file path")
 }
