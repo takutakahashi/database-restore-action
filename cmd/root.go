@@ -47,5 +47,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringP("config", "c", "./config.yaml", "config file path")
+	rootCmd.Flags().StringP("config", "c", "./sample/config.yaml", "config file path")
 }

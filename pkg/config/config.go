@@ -7,18 +7,22 @@ import (
 )
 
 type Config struct {
-	DatabaseType  DatabaseType          `json:"database_type"`
-	DatabaseImage string                `json:"database_image"`
-	CheckTargets  []DatabaseCheckTarget `json:"check_targets"`
-	Backup        DatabaseBackup        `json:"backup"`
+	Database Database              `yaml:"database"`
+	Check    []DatabaseCheckTarget `yaml:"check"`
+	Backup   DatabaseBackup        `yaml:"backup"`
+}
+
+type Database struct {
+	Type  DatabaseType `yaml:"type"`
+	Image string       `yaml:"image"`
 }
 
 type DatabaseCheckTarget struct {
-	Table   string `json:"table"`
-	Column  string `json:"column"`
-	CountGT int    `json:"count_gt"`
-	CountLT int    `json:"count_lt"`
-	CountEQ int    `json:"count_eq"`
+	Table   string `yaml:"table"`
+	Column  string `yaml:"column"`
+	CountGT int    `yaml:"count_gt"`
+	CountLT int    `yaml:"count_lt"`
+	CountEQ int    `yaml:"count_eq"`
 }
 
 type DatabaseBackup struct {

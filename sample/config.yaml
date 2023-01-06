@@ -1,0 +1,9 @@
+database:
+  type: mysql
+  image: mysql:8.0
+check:
+- table: "test"
+  column: "user"
+  count_gt: 100
+backup:
+  uri: file:///tmp/backup.dump
