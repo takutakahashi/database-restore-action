@@ -1,9 +1,9 @@
 database:
   type: mysql
-  image: mysql:8.0
+  uri: mysql://root:root@localhost:33060
 check:
 - table: "test"
   column: "user"
-  count_gt: 100
+  count_eq: 2 
 backup:
-  uri: file:///tmp/backup.dump
+  uri: file://./sample/test.dump

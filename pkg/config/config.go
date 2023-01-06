@@ -15,14 +15,16 @@ type Config struct {
 type Database struct {
 	Type  DatabaseType `yaml:"type"`
 	Image string       `yaml:"image"`
+	URI   string       `yaml:"uri"`
 }
 
 type DatabaseCheckTarget struct {
-	Table   string `yaml:"table"`
-	Column  string `yaml:"column"`
-	CountGT int    `yaml:"count_gt"`
-	CountLT int    `yaml:"count_lt"`
-	CountEQ int    `yaml:"count_eq"`
+	Database string `yaml:"database"`
+	Table    string `yaml:"table"`
+	Column   string `yaml:"column"`
+	CountGT  int    `yaml:"count_gt"`
+	CountLT  int    `yaml:"count_lt"`
+	CountEQ  int    `yaml:"count_eq"`
 }
 
 type DatabaseBackup struct {
