@@ -26,13 +26,14 @@ type DatabaseCheckTarget struct {
 }
 
 type DatabaseBackup struct {
-	URI          string       `json:"uri"`
-	S3Credential S3Credential `json:"s3_credential"`
+	URI          string       `yaml:"uri"`
+	S3Credential S3Credential `yaml:"s3_credential"`
 }
 
 type S3Credential struct {
-	AccessKeyId     string `json:"access_key_id"`
-	SecretAccessKey string `json:"secret_access_key"`
+	AccessKeyId     string `yaml:"access_key_id"`
+	SecretAccessKey string `yaml:"secret_access_key"`
+	Profile         string `yaml:"profile"`
 }
 
 type DatabaseType string
