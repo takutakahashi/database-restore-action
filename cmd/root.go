@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/takutakahashi/database-restore-action/pkg/config"
+	"github.com/takutakahashi/database-restore-action/pkg/database"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -34,6 +35,14 @@ to quickly create a Cobra application.`,
 			logrus.Fatal(err)
 		}
 		logrus.Info(cfg)
+		d, err := database.New(cfg)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		if err := d.Run(); err != nil {
+			logrus.Fatal(err)
+		}
+		logrus.Info("succeeded")
 	},
 }
 

@@ -1,9 +1,14 @@
 database:
   type: mysql
-  uri: mysql://root:root@localhost:33060
+  name: test
+  user: root
+  password: root
+  host: 127.0.0.1
+  port: 33060
 check:
 - table: "test"
   column: "user"
   count_eq: 2 
 backup:
   uri: file://./sample/test.dump
+  local: ./sample/test.dump

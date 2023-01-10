@@ -6,5 +6,6 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: testdb
     ports:
       - 33060:3306

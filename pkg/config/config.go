@@ -13,9 +13,13 @@ type Config struct {
 }
 
 type Database struct {
-	Type  DatabaseType `yaml:"type"`
-	Image string       `yaml:"image"`
-	URI   string       `yaml:"uri"`
+	Type     DatabaseType `yaml:"type"`
+	Name     string       `yaml:"name"`
+	Image    string       `yaml:"image"`
+	User     string       `yaml:"user"`
+	Password string       `yaml:"password"`
+	Host     string       `yaml:"host"`
+	Port     string       `yaml:"port"`
 }
 
 type DatabaseCheckTarget struct {
@@ -28,6 +32,7 @@ type DatabaseCheckTarget struct {
 }
 
 type DatabaseBackup struct {
+	Local        string       `yaml:"local"`
 	URI          string       `yaml:"uri"`
 	S3Credential S3Credential `yaml:"s3_credential"`
 }
