@@ -23,13 +23,20 @@ type Database struct {
 }
 
 type DatabaseCheckTarget struct {
-	Database string `yaml:"database"`
-	Table    string `yaml:"table"`
-	Column   string `yaml:"column"`
-	CountGT  int    `yaml:"count_gt"`
-	CountLT  int    `yaml:"count_lt"`
-	CountEQ  int    `yaml:"count_eq"`
+	Query    string        `yaml:"query"`
+	Operator CheckOperator `yaml:"operator"`
+	Value    int           `yaml:"value"`
 }
+
+type CheckOperator string
+
+var (
+	OpEqual CheckOperator = "equal"
+	OpGT    CheckOperator = "gt"
+	OpLT    CheckOperator = "lt"
+	OpErr   CheckOperator = "error"
+	OpNoErr CheckOperator = "noerror"
+)
 
 type DatabaseBackup struct {
 	Local        string       `yaml:"local"`

@@ -6,9 +6,9 @@ database:
   host: 127.0.0.1
   port: 33060
 check:
-- table: "test"
-  column: "user"
-  count_eq: 2 
+- query: "select count(*) from test"
+  operator: gt
+  value: 1
 backup:
   uri: file://./sample/test.dump
   local: ./sample/test.dump
