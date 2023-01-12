@@ -34,7 +34,6 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			logrus.Fatal(err)
 		}
-		logrus.Info(cfg)
 		d, err := database.New(cfg)
 		if err != nil {
 			logrus.Fatal(err)

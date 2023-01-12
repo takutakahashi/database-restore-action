@@ -100,14 +100,12 @@ func (d Database) RunTest() error {
 		if err2 := pass(c, count, err); err2 != nil {
 			return err2
 		} else {
-			logrus.Info("pass")
 		}
 	}
 	return nil
 }
 
 func pass(c config.DatabaseCheckTarget, count int, err error) error {
-	logrus.Info(c, count, err)
 	if c.Operator != config.OpErr && err != nil {
 		return err
 	}
@@ -116,28 +114,31 @@ func pass(c config.DatabaseCheckTarget, count int, err error) error {
 		if c.Value != count {
 			return fmt.Errorf("expected %d != actual %d", c.Value, count)
 		}
+		logrus.Infof("[pass] %s = %d, %s %d", c.Query, count, c.Operator, c.Value)
 		return nil
 	case config.OpGT:
 		if c.Value > count {
 			return fmt.Errorf("expected %d > actual %d", c.Value, count)
 		}
+		logrus.Infof("[pass] %s = %d, %s %d", c.Query, count, c.Operator, c.Value)
 		return nil
 	case config.OpLT:
 		if c.Value < count {
 			return fmt.Errorf("expected %d < actual %d", c.Value, count)
 		}
-		return nil
 	case config.OpErr:
 		if err == nil {
 			return fmt.Errorf("no error is not expected")
 		} else {
-			logrus.Infof("expected. err: %s", err)
 			return nil
 		}
 	case config.OpNoErr:
 		return err
+	default:
+		return fmt.Errorf("not implemented for this op")
 	}
-	return fmt.Errorf("not implemented for this op")
+	logrus.Infof("[pass] %s = %d, %s %d", c.Query, count, c.Operator, c.Value)
+	return nil
 }
 
 func (d Database) Cleanup() error {
