@@ -1,0 +1,13 @@
+name: 'Restore and Test Database'
+description: 'Check if database backup is valid'
+inputs:
+  config-path:  # id of input
+    description: 'config path'
+    required: true
+    default: './config.yaml'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - -c
+    - ${{ inputs.config-path }}
