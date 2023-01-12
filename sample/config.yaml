@@ -6,8 +6,8 @@ database:
   host: 127.0.0.1
   port: 33060
 check:
-- query: "select count(*) from test"
-  operator: gt
+- query: "select * from test"
+  operator: exists
   value: 1
 backup:
   uri: file://./sample/test.dump

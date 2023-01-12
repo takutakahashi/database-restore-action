@@ -94,12 +94,13 @@ func (d Database) Initialize() error {
 
 func (d Database) RunTest() error {
 	for _, c := range d.cfg.Check {
-		row := d.db.QueryRow(c.Query)
+		row, err := d.db.Query(c.Query)
 		count := 0
-		err := row.Scan(&count)
+		for row.Next() {
+			count++
+		}
 		if err2 := pass(c, count, err); err2 != nil {
 			return err2
-		} else {
 		}
 	}
 	return nil
@@ -110,18 +111,21 @@ func pass(c config.DatabaseCheckTarget, count int, err error) error {
 		return err
 	}
 	switch c.Operator {
+	case config.OpExists:
+		if count <= 0 {
+			return fmt.Errorf("any row exists")
+		} else {
+			logrus.Infof("[pass] row exists, query: %s", c.Query)
+			return nil
+		}
 	case config.OpEqual:
 		if c.Value != count {
 			return fmt.Errorf("expected %d != actual %d", c.Value, count)
 		}
-		logrus.Infof("[pass] %s = %d, %s %d", c.Query, count, c.Operator, c.Value)
-		return nil
 	case config.OpGT:
 		if c.Value > count {
 			return fmt.Errorf("expected %d > actual %d", c.Value, count)
 		}
-		logrus.Infof("[pass] %s = %d, %s %d", c.Query, count, c.Operator, c.Value)
-		return nil
 	case config.OpLT:
 		if c.Value < count {
 			return fmt.Errorf("expected %d < actual %d", c.Value, count)

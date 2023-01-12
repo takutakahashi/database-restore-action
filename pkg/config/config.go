@@ -31,11 +31,12 @@ type DatabaseCheckTarget struct {
 type CheckOperator string
 
 var (
-	OpEqual CheckOperator = "equal"
-	OpGT    CheckOperator = "gt"
-	OpLT    CheckOperator = "lt"
-	OpErr   CheckOperator = "error"
-	OpNoErr CheckOperator = "noerror"
+	OpExists CheckOperator = "exists"
+	OpEqual  CheckOperator = "equal"
+	OpGT     CheckOperator = "gt"
+	OpLT     CheckOperator = "lt"
+	OpErr    CheckOperator = "error"
+	OpNoErr  CheckOperator = "noerror"
 )
 
 type DatabaseBackup struct {
