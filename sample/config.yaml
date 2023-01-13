@@ -8,7 +8,6 @@ database:
 check:
 - query: "select * from test"
   operator: exists
-  value: 1
 backup:
   uri: file://./sample/test.dump
   local: ./sample/test.dump
