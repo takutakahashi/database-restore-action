@@ -7,7 +7,7 @@ inputs:
     default: './config.yaml'
 runs:
   using: docker
-  image: ghcr.io/takutakahashi/database-restore-action:latest
+  image: docker://ghcr.io/takutakahashi/database-restore-action:latest
   args:
     - -c
     - ${{ inputs.config-path }}
