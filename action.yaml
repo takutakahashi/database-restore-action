@@ -6,8 +6,8 @@ inputs:
     required: true
     default: './config.yaml'
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: docker
+  image: ghcr.io/takutakahashi/database-restore-action:latest
   args:
     - -c
     - ${{ inputs.config-path }}
