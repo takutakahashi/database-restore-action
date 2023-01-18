@@ -113,9 +113,9 @@ func pass(c config.DatabaseCheckTarget, count int, err error) error {
 	switch c.Operator {
 	case config.OpExists:
 		if count <= 0 {
-			return fmt.Errorf("any row exists")
+			return fmt.Errorf("no row exists")
 		} else {
-			logrus.Infof("[pass] row exists, query: %s", c.Query)
+			logrus.Infof("[pass] row exists, count: %d, query: %s", count, c.Query)
 			return nil
 		}
 	case config.OpEqual:
