@@ -3,12 +3,14 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/sirupsen/logrus"
 	"github.com/takutakahashi/database-restore-action/pkg/config"
+	"github.com/takutakahashi/database-restore-action/pkg/storage"
 )
 
 var errDBUndefined error = fmt.Errorf("db is not defined")
@@ -155,15 +157,32 @@ func (d Database) Cleanup() error {
 
 func (d Database) Restore() error {
 	if d.cfg.Backup.Local != "" {
-		command, args := genCommand(d.cfg)
-		execCmd := fmt.Sprintf("%s %s < %s", command, strings.Join(args, " "), d.cfg.Backup.Local)
-		dumpCmd := exec.Command("bash", "-c", execCmd)
-		if buf, err := dumpCmd.Output(); err != nil {
-			logrus.Errorf("%s", buf)
+		return restoreLocal(d.cfg, d.cfg.Backup.Local)
+
+	}
+	if d.cfg.Backup.S3.Bucket != "" && d.cfg.Backup.S3.Key != "" {
+		s, err := storage.NewS3(d.cfg)
+		if err != nil {
 			return err
 		}
-		return nil
+		localPath, err := s.Download()
+		if err != nil {
+			return err
+		}
+		defer os.Remove(localPath)
+		return restoreLocal(d.cfg, localPath)
 
 	}
 	return fmt.Errorf("not implemented")
+}
+
+func restoreLocal(cfg *config.Config, path string) error {
+	command, args := genCommand(cfg)
+	execCmd := fmt.Sprintf("%s %s < %s", command, strings.Join(args, " "), path)
+	dumpCmd := exec.Command("bash", "-c", execCmd)
+	if buf, err := dumpCmd.Output(); err != nil {
+		logrus.Errorf("%s", buf)
+		return err
+	}
+	return nil
 }

@@ -40,15 +40,15 @@ var (
 )
 
 type DatabaseBackup struct {
-	Local        string       `yaml:"local"`
-	URI          string       `yaml:"uri"`
-	S3Credential S3Credential `yaml:"s3_credential"`
+	Local string   `yaml:"local"`
+	S3    BackupS3 `yaml:"s3"`
 }
 
-type S3Credential struct {
-	AccessKeyId     string `yaml:"access_key_id"`
-	SecretAccessKey string `yaml:"secret_access_key"`
-	Profile         string `yaml:"profile"`
+type BackupS3 struct {
+	Bucket  string `yaml:"bucket"`
+	Key     string `yaml:"key"`
+	Profile string `yaml:"profile"`
+	Region  string `yaml:"region"`
 }
 
 type DatabaseType string
