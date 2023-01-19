@@ -1,8 +1,12 @@
 package storage
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -61,5 +65,51 @@ func (s S3) Download() (string, error) {
 		os.Remove(f.Name())
 		return "", err
 	}
-	return f.Name(), nil
+	extractedF, err := extract(s.key, f)
+	if err != nil {
+		return "", err
+	}
+	return extractedF.Name(), nil
+}
+
+func extract(filename string, r *os.File) (*os.File, error) {
+	file, ext := splitExt(filename)
+	switch ext {
+	case ".gz":
+		f, err := os.CreateTemp("/tmp", "gz")
+		if err != nil {
+			return nil, err
+		}
+		//defer os.Remove(r.Name())
+
+		gr, err := gzip.NewReader(r)
+		if err != nil {
+			return nil, err
+		}
+		defer gr.Close()
+
+		if _, err := io.Copy(f, gr); err != nil {
+			return nil, err
+		}
+		return extract(file, f)
+	case ".tar":
+		f, err := os.CreateTemp("/tmp", "tar")
+		if err != nil {
+			return nil, err
+		}
+		//defer os.Remove(r.Name())
+		tr := tar.NewReader(r)
+		if w, err := io.Copy(f, tr); err != nil {
+			return nil, err
+		} else {
+			logrus.Info(w)
+		}
+		return extract(file, f)
+	default:
+		return r, nil
+	}
+}
+func splitExt(filename string) (string, string) {
+	ext := filepath.Ext(filename)
+	return filename[:len(filename)-len(ext)], ext
 }
