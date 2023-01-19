@@ -53,7 +53,7 @@ func NewS3(cfg *config.Config) (*S3, error) {
 func (s S3) Download() (string, error) {
 	logrus.Infof("downloading file %s/%s", s.bucket, s.key)
 	d := s3manager.NewDownloader(s.session)
-	f, err := os.CreateTemp("/tmp", "dump")
+	f, err := os.Create(fmt.Sprintf("/tmp/%s", filepath.Base(s.key)))
 	if err != nil {
 		return "", err
 	}
@@ -65,48 +65,54 @@ func (s S3) Download() (string, error) {
 		os.Remove(f.Name())
 		return "", err
 	}
-	extractedF, err := extract(s.key, f)
-	if err != nil {
-		return "", err
-	}
-	return extractedF.Name(), nil
+	return extract(f.Name())
 }
 
-func extract(filename string, r *os.File) (*os.File, error) {
+func extract(filename string) (string, error) {
 	file, ext := splitExt(filename)
 	switch ext {
 	case ".gz":
-		f, err := os.CreateTemp("/tmp", "gz")
+		r, err := os.Open(filename)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		//defer os.Remove(r.Name())
+		f, err := os.Create(file)
+		if err != nil {
+			return "", err
+		}
+		defer os.Remove(r.Name())
 
 		gr, err := gzip.NewReader(r)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		defer gr.Close()
 
 		if _, err := io.Copy(f, gr); err != nil {
-			return nil, err
+			return "", err
 		}
-		return extract(file, f)
+		return extract(file)
 	case ".tar":
-		f, err := os.CreateTemp("/tmp", "tar")
+		r, err := os.Open(filename)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		//defer os.Remove(r.Name())
+		f, err := os.Create(file)
+		if err != nil {
+			return "", err
+		}
+		defer os.Remove(r.Name())
 		tr := tar.NewReader(r)
-		if w, err := io.Copy(f, tr); err != nil {
-			return nil, err
-		} else {
-			logrus.Info(w)
+		logrus.Info(tr)
+		if _, err := tr.Next(); err == io.EOF {
+			return "", err
 		}
-		return extract(file, f)
+		if _, err := io.Copy(f, tr); err != nil {
+			return "", err
+		}
+		return extract(file)
 	default:
-		return r, nil
+		return filename, nil
 	}
 }
 func splitExt(filename string) (string, string) {

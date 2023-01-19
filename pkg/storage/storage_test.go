@@ -1,7 +1,10 @@
 package storage
 
 import (
+	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -60,11 +63,6 @@ func Test_splitExt(t *testing.T) {
 func Test_extract(t *testing.T) {
 	type args struct {
 		filename string
-		r        *os.File
-	}
-	r, err := os.Open("../../aaa.tar.gz")
-	if err != nil {
-		panic(err)
 	}
 	tests := []struct {
 		name    string
@@ -74,26 +72,38 @@ func Test_extract(t *testing.T) {
 		{
 			name: "ok",
 			args: args{
-				filename: "aaa.tar.gz",
-				r:        r,
+				filename: "../../test.tar.gz",
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r, err := extract(tt.args.filename, tt.args.r)
+			w, err := os.Create(tt.args.filename)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			r, err := os.Open(fmt.Sprintf("../../misc/%s", filepath.Base(tt.args.filename)))
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			if _, err := io.Copy(w, r); err != nil {
+				t.Error(err)
+				return
+			}
+			w.Close()
+			r.Close()
+			got, err := extract(tt.args.filename)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("extract() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			buf := []byte{}
-			if _, err := r.Read(buf); err != nil {
+			if b, err := os.ReadFile(got); err != nil {
 				t.Error(err)
-				return
-			}
-			if string(buf) != "test" {
-				t.Errorf("%s", buf)
+			} else if string(b) != "test\n" {
+				t.Errorf("%s", b)
 			}
 		})
 	}
