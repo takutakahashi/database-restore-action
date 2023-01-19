@@ -1,8 +1,12 @@
 package storage
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -49,7 +53,7 @@ func NewS3(cfg *config.Config) (*S3, error) {
 func (s S3) Download() (string, error) {
 	logrus.Infof("downloading file %s/%s", s.bucket, s.key)
 	d := s3manager.NewDownloader(s.session)
-	f, err := os.CreateTemp("/tmp", "dump")
+	f, err := os.Create(fmt.Sprintf("/tmp/%s", filepath.Base(s.key)))
 	if err != nil {
 		return "", err
 	}
@@ -61,5 +65,57 @@ func (s S3) Download() (string, error) {
 		os.Remove(f.Name())
 		return "", err
 	}
-	return f.Name(), nil
+	return extract(f.Name())
+}
+
+func extract(filename string) (string, error) {
+	file, ext := splitExt(filename)
+	switch ext {
+	case ".gz":
+		r, err := os.Open(filename)
+		if err != nil {
+			return "", err
+		}
+		f, err := os.Create(file)
+		if err != nil {
+			return "", err
+		}
+		defer os.Remove(r.Name())
+
+		gr, err := gzip.NewReader(r)
+		if err != nil {
+			return "", err
+		}
+		defer gr.Close()
+
+		if _, err := io.Copy(f, gr); err != nil {
+			return "", err
+		}
+		return extract(file)
+	case ".tar":
+		r, err := os.Open(filename)
+		if err != nil {
+			return "", err
+		}
+		f, err := os.Create(file)
+		if err != nil {
+			return "", err
+		}
+		defer os.Remove(r.Name())
+		tr := tar.NewReader(r)
+		logrus.Info(tr)
+		if _, err := tr.Next(); err == io.EOF {
+			return "", err
+		}
+		if _, err := io.Copy(f, tr); err != nil {
+			return "", err
+		}
+		return extract(file)
+	default:
+		return filename, nil
+	}
+}
+func splitExt(filename string) (string, string) {
+	ext := filepath.Ext(filename)
+	return filename[:len(filename)-len(ext)], ext
 }
