@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func Test_splitExt(t *testing.T) {
@@ -104,6 +105,46 @@ func Test_extract(t *testing.T) {
 				t.Error(err)
 			} else if string(b) != "test\n" {
 				t.Errorf("%s", b)
+			}
+		})
+	}
+}
+
+func Test_setKey(t *testing.T) {
+	today := time.Now().Format("20060102")
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "ok",
+			args: args{
+				key: "hogehoge/hogehoge",
+			},
+			want: "hogehoge/hogehoge",
+		},
+		{
+			name: "today",
+			args: args{
+				key: `hogehoge/{{ .Today.Format "20060102" }}`,
+			},
+			want: fmt.Sprintf("hogehoge/%s", today),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := setKey(tt.args.key)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("setKey() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("setKey() = %v, want %v", got, tt.want)
 			}
 		})
 	}

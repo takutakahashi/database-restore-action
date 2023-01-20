@@ -2,11 +2,14 @@ package storage
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"text/template"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -43,11 +46,39 @@ func NewS3(cfg *config.Config) (*S3, error) {
 			Profile: cfg.Backup.S3.Profile,
 		}
 	}
+	key, err := setKey(cfg.Backup.S3.Key)
+	if err != nil {
+		return nil, err
+	}
 	return &S3{
 		session: session.Must(session.NewSessionWithOptions(opt)),
 		bucket:  cfg.Backup.S3.Bucket,
-		key:     cfg.Backup.S3.Key,
+		key:     key,
 	}, nil
+}
+
+func setKey(key string) (string, error) {
+	parsedKey, err := template.New("tpl").Funcs(template.FuncMap{}).Parse(key)
+	if err != nil {
+		return "", err
+	}
+	w := bytes.Buffer{}
+	n := time.Now()
+	if err := parsedKey.Execute(&w, struct {
+		Today       time.Time
+		Yesterday   time.Time
+		OneWeekAgo  time.Time
+		OneMonthAgo time.Time
+	}{
+		Today:       n,
+		Yesterday:   n.AddDate(0, 0, -1),
+		OneWeekAgo:  n.AddDate(0, 0, -7),
+		OneMonthAgo: n.AddDate(0, -1, 0),
+	}); err != nil {
+		return "", err
+	}
+	return w.String(), nil
+
 }
 
 func (s S3) Download() (string, error) {
