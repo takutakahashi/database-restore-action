@@ -9,8 +9,8 @@ runs:
   using: "composite"
   steps:
     - run: |
-        wget https://github.com/takutakahashi/database-restore-action/releases/download/v0.1.0/database-restore-action_0.3.0_linux_amd64.tar.gz
-        tar vzxf database-restore-action_0.3.0_linux_amd64.tar.gz
+        wget https://github.com/takutakahashi/database-restore-action/releases/download/v0.1.0/database-restore-action_0.4.0_linux_amd64.tar.gz
+        tar vzxf database-restore-action_0.4.0_linux_amd64.tar.gz
       shell: bash
     - run: ./database-restore-action -c ${{ inputs.config-path }}
       shell: bash
