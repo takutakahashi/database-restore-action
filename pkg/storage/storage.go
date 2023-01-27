@@ -41,6 +41,7 @@ func NewS3(cfg *config.Config) (*S3, error) {
 			SharedConfigState: session.SharedConfigEnable,
 		}
 	} else {
+		logrus.Infof("use profile %s", cfg.Backup.S3.Profile)
 		opt = session.Options{
 			Config:  aws.Config{Region: aws.String(cfg.Backup.S3.Region)},
 			Profile: cfg.Backup.S3.Profile,
@@ -89,12 +90,14 @@ func (s S3) Download() (string, error) {
 		return "", err
 	}
 	defer f.Close()
-	if _, err := d.Download(f, &s3.GetObjectInput{
+	if size, err := d.Download(f, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(s.key),
 	}); err != nil {
 		os.Remove(f.Name())
 		return "", err
+	} else {
+		logrus.Infof("%d bytes downloaded to %s", size, f.Name())
 	}
 	return extract(f.Name())
 }
@@ -103,6 +106,7 @@ func extract(filename string) (string, error) {
 	file, ext := splitExt(filename)
 	switch ext {
 	case ".gz":
+		logrus.Infof("extracting %s", filename)
 		r, err := os.Open(filename)
 		if err != nil {
 			return "", err
@@ -122,8 +126,10 @@ func extract(filename string) (string, error) {
 		if _, err := io.Copy(f, gr); err != nil {
 			return "", err
 		}
+		logrus.Infof("extracted to %s", f.Name())
 		return extract(file)
 	case ".tar":
+		logrus.Infof("extract %s", filename)
 		r, err := os.Open(filename)
 		if err != nil {
 			return "", err
@@ -134,13 +140,13 @@ func extract(filename string) (string, error) {
 		}
 		defer os.Remove(r.Name())
 		tr := tar.NewReader(r)
-		logrus.Info(tr)
 		if _, err := tr.Next(); err == io.EOF {
 			return "", err
 		}
 		if _, err := io.Copy(f, tr); err != nil {
 			return "", err
 		}
+		logrus.Infof("extracted to %s", f.Name())
 		return extract(file)
 	default:
 		return filename, nil

@@ -40,7 +40,7 @@ var (
 )
 
 type DatabaseBackup struct {
-	Local string   `yaml:"local"`
+	Local string   `yaml:"local,omitempty"`
 	S3    BackupS3 `yaml:"s3"`
 }
 

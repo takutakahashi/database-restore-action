@@ -179,10 +179,13 @@ func (d Database) Restore() error {
 func restoreLocal(cfg *config.Config, path string) error {
 	command, args := genCommand(cfg)
 	execCmd := fmt.Sprintf("%s %s < %s", command, strings.Join(args, " "), path)
+	logrus.Info("execting restore...")
 	dumpCmd := exec.Command("bash", "-c", execCmd)
 	if buf, err := dumpCmd.Output(); err != nil {
+		logrus.Errorf("restore failed. error: %s", err)
 		logrus.Errorf("%s", buf)
 		return err
 	}
+	logrus.Info("restored")
 	return nil
 }
