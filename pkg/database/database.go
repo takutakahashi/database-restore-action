@@ -97,6 +97,9 @@ func (d Database) Initialize() error {
 func (d Database) RunTest() error {
 	for _, c := range d.cfg.Check {
 		row, err := d.db.Query(c.Query)
+		if err != nil {
+			return err
+		}
 		count := 0
 		for row.Next() {
 			count++
