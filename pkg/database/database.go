@@ -184,7 +184,7 @@ func restoreLocal(cfg *config.Config, path string) error {
 	execCmd := fmt.Sprintf("%s %s < %s", command, strings.Join(args, " "), path)
 	logrus.Info("execting restore...")
 	dumpCmd := exec.Command("bash", "-c", execCmd)
-	if buf, err := dumpCmd.Output(); err != nil {
+	if buf, err := dumpCmd.CombinedOutput(); err != nil {
 		logrus.Errorf("restore failed. error: %s", err)
 		logrus.Errorf("%s", buf)
 		return err
