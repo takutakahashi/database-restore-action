@@ -2,9 +2,11 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -18,6 +20,12 @@ var errDBUndefined error = fmt.Errorf("db is not defined")
 type Database struct {
 	cfg *config.Config
 	db  *sql.DB
+}
+
+type trashScanner struct{}
+
+func (trashScanner) Scan(interface{}) error {
+	return nil
 }
 
 func genDatabaseURI(cfg *config.Config, includeDatabaseName bool) string {
@@ -91,6 +99,21 @@ func (d Database) Initialize() error {
 			return err
 		}
 	}
+	if d.cfg.Database.DisableRedoLog {
+		version, err := d.fetchVersion()
+		if err != nil {
+			return err
+		}
+
+		if version[0] >= 8 && version[2] >= 21 {
+			_, err := d.db.Exec("ALTER INSTANCE DISABLE INNODB REDO_LOG;")
+			if err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("Innodb_redo_log_enabled only supports versions newer than 8.0.20")
+		}
+	}
 	return nil
 }
 
@@ -156,6 +179,38 @@ func (d Database) Cleanup() error {
 	}
 	_, err := d.db.Exec(fmt.Sprintf("drop database %s", d.cfg.Database.Name))
 	return err
+}
+
+func (d Database) fetchVersion() (version [3]int, err error) {
+	rows, err := d.db.Query("SHOW VARIABLES WHERE VARIABLE_NAME = 'VERSION'")
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var versionString string
+		if err = rows.Scan(trashScanner{}, &versionString); err != nil {
+			err = fmt.Errorf("fetchVersion : %w", err)
+			return
+		}
+		if i := strings.IndexRune(versionString, '-'); i >= 0 {
+			versionString = versionString[:i]
+		}
+		xs := strings.Split(versionString, ".")
+		if len(xs) >= 2 {
+			version[0], _ = strconv.Atoi(xs[0])
+			version[1], _ = strconv.Atoi(xs[1])
+			if len(xs) >= 3 {
+				version[2], _ = strconv.Atoi(xs[2])
+			}
+		}
+		break
+	}
+	if version[0] == 0 {
+		err = errors.New("failed to get mysql version")
+		return
+	}
+	return
 }
 
 func (d Database) Restore() error {
