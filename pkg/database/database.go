@@ -99,21 +99,26 @@ func (d Database) Initialize() error {
 			return err
 		}
 	}
-	if d.cfg.Database.DisableRedoLog {
-		version, err := d.fetchVersion()
-		if err != nil {
-			return err
-		}
 
-		if version[0] >= 8 && version[2] >= 21 {
-			_, err := d.db.Exec("ALTER INSTANCE DISABLE INNODB REDO_LOG;")
+	switch d.cfg.Database.Type {
+	case "mysql":
+		if d.cfg.Database.DisableRedoLog {
+			version, err := d.fetchVersion()
 			if err != nil {
 				return err
 			}
-		} else {
-			return fmt.Errorf("Innodb_redo_log_enabled only supports versions newer than 8.0.20")
+
+			if version[0] >= 8 && version[2] >= 21 {
+				_, err := d.db.Exec("ALTER INSTANCE DISABLE INNODB REDO_LOG;")
+				if err != nil {
+					return err
+				}
+			} else {
+				return fmt.Errorf("Innodb_redo_log_enabled only supports versions newer than 8.0.20")
+			}
 		}
 	}
+
 	return nil
 }
 
