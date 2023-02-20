@@ -5,6 +5,7 @@ database:
   password: root
   host: 127.0.0.1
   port: 33060
+  disable_redo_log: false
 check:
 - query: "select * from test"
   operator: exists

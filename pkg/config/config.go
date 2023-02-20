@@ -13,13 +13,14 @@ type Config struct {
 }
 
 type Database struct {
-	Type     DatabaseType `yaml:"type"`
-	Name     string       `yaml:"name"`
-	Image    string       `yaml:"image"`
-	User     string       `yaml:"user"`
-	Password string       `yaml:"password"`
-	Host     string       `yaml:"host"`
-	Port     string       `yaml:"port"`
+	Type           DatabaseType `yaml:"type"`
+	Name           string       `yaml:"name"`
+	Image          string       `yaml:"image"`
+	User           string       `yaml:"user"`
+	Password       string       `yaml:"password"`
+	Host           string       `yaml:"host"`
+	Port           string       `yaml:"port"`
+	DisableRedoLog bool         `yaml:"disable_redo_log"`
 }
 
 type DatabaseCheckTarget struct {
