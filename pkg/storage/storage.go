@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -15,14 +16,23 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	scp "github.com/bramvdbogaerde/go-scp"
+	"github.com/bramvdbogaerde/go-scp/auth"
 	"github.com/sirupsen/logrus"
 	"github.com/takutakahashi/database-restore-action/pkg/config"
+	"golang.org/x/crypto/ssh"
 )
 
 type S3 struct {
 	bucket  string
 	key     string
 	session *session.Session
+}
+
+type Scp struct {
+	remotePath string
+	key        string
+	client     scp.Client
 }
 
 func NewS3(cfg *config.Config) (*S3, error) {
@@ -155,4 +165,35 @@ func extract(filename string) (string, error) {
 func splitExt(filename string) (string, string) {
 	ext := filepath.Ext(filename)
 	return filename[:len(filename)-len(ext)], ext
+}
+
+func NewScp(cfg *config.Config) (*Scp, error) {
+	clientConfig, err := auth.PrivateKey(cfg.Backup.Scp.User, cfg.Backup.Scp.Key, ssh.InsecureIgnoreHostKey())
+	if err != nil {
+		return nil, err
+	}
+	client := scp.NewClient(fmt.Sprintf("%s:%s", cfg.Backup.Scp.Host, cfg.Backup.Scp.Port), &clientConfig)
+	return &Scp{
+		client:     client,
+		key:        cfg.Backup.Scp.Key,
+		remotePath: cfg.Backup.Scp.Path,
+	}, nil
+}
+
+func (s Scp) Download() (string, error) {
+	err := s.client.Connect()
+	if err != nil {
+		return "", err
+	}
+	defer s.client.Close()
+	f, err := os.Create(fmt.Sprintf("/tmp/%s", filepath.Base(s.key)))
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	err = s.client.CopyFromRemote(context.Background(), f, s.remotePath)
+	if err != nil {
+		return "", err
+	}
+	return extract(f.Name())
 }
