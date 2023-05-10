@@ -168,14 +168,18 @@ func splitExt(filename string) (string, string) {
 }
 
 func NewScp(cfg *config.Config) (*Scp, error) {
-	clientConfig, err := auth.PrivateKey(cfg.Backup.Scp.User, cfg.Backup.Scp.Key, ssh.InsecureIgnoreHostKey())
+	clientConfig, err := auth.PrivateKey(cfg.Backup.Scp.User, cfg.Backup.Scp.SshKey, ssh.InsecureIgnoreHostKey())
 	if err != nil {
 		return nil, err
 	}
 	client := scp.NewClient(fmt.Sprintf("%s:%s", cfg.Backup.Scp.Host, cfg.Backup.Scp.Port), &clientConfig)
+	key, err := setKey(cfg.Backup.Scp.Key)
+	if err != nil {
+		return nil, err
+	}
 	return &Scp{
 		client:     client,
-		key:        cfg.Backup.Scp.Key,
+		key:        key,
 		remotePath: cfg.Backup.Scp.Path,
 	}, nil
 }
@@ -191,9 +195,11 @@ func (s Scp) Download() (string, error) {
 		return "", err
 	}
 	defer f.Close()
-	err = s.client.CopyFromRemote(context.Background(), f, s.remotePath)
+	logrus.Infof("copying %s", fmt.Sprintf("%s/%s",s.remotePath,s.key))
+	err = s.client.CopyFromRemote(context.Background(), f, fmt.Sprintf("%s/%s",s.remotePath,s.key))
 	if err != nil {
 		return "", err
 	}
+	logrus.Infof("copied %s", fmt.Sprintf("%s/%s",s.remotePath,s.key))
 	return extract(f.Name())
 }
