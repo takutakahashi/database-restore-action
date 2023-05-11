@@ -12,15 +12,17 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/viant/afs"
+	option "github.com/viant/afs/option"
+	scp "github.com/viant/afs/scp"
+	"github.com/viant/afs/storage"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	scp "github.com/bramvdbogaerde/go-scp"
-	"github.com/bramvdbogaerde/go-scp/auth"
 	"github.com/sirupsen/logrus"
 	"github.com/takutakahashi/database-restore-action/pkg/config"
-	"golang.org/x/crypto/ssh"
 )
 
 type S3 struct {
@@ -32,7 +34,9 @@ type S3 struct {
 type Scp struct {
 	remotePath string
 	key        string
-	client     scp.Client
+	host       string
+	client     afs.Service
+	auth       storage.Option
 }
 
 func NewS3(cfg *config.Config) (*S3, error) {
@@ -168,38 +172,46 @@ func splitExt(filename string) (string, string) {
 }
 
 func NewScp(cfg *config.Config) (*Scp, error) {
-	clientConfig, err := auth.PrivateKey(cfg.Backup.Scp.User, cfg.Backup.Scp.SshKey, ssh.InsecureIgnoreHostKey())
-	if err != nil {
-		return nil, err
+	var auth storage.Option
+	if cfg.Backup.Scp.SshKey != "" {
+		auth = scp.NewKeyAuth(cfg.Backup.Scp.SshKey, cfg.Backup.Scp.User, cfg.Backup.Scp.SshKey)
+	} else if cfg.Backup.Scp.Password != "" {
+		auth = option.NewBasicAuth(cfg.Backup.Scp.User, cfg.Backup.Scp.Password)
+	} else {
+		return nil, fmt.Errorf("No authentication method")
 	}
-	client := scp.NewClient(fmt.Sprintf("%s:%s", cfg.Backup.Scp.Host, cfg.Backup.Scp.Port), &clientConfig)
+
+	service := afs.New()
 	key, err := setKey(cfg.Backup.Scp.Key)
 	if err != nil {
 		return nil, err
 	}
 	return &Scp{
-		client:     client,
+		client:     service,
 		key:        key,
+		auth:       auth,
+		host:       cfg.Backup.Scp.Host,
 		remotePath: cfg.Backup.Scp.Path,
 	}, nil
 }
 
 func (s Scp) Download() (string, error) {
-	err := s.client.Connect()
-	if err != nil {
-		return "", err
-	}
-	defer s.client.Close()
 	f, err := os.Create(fmt.Sprintf("/tmp/%s", filepath.Base(s.key)))
 	if err != nil {
 		return "", err
 	}
 	defer f.Close()
-	logrus.Infof("copying %s", fmt.Sprintf("%s/%s",s.remotePath,s.key))
-	err = s.client.CopyFromRemote(context.Background(), f, fmt.Sprintf("%s/%s",s.remotePath,s.key))
+	logrus.Infof("copying %s%s/%s", s.host, s.remotePath, s.key)
+	reader, err := s.client.DownloadWithURL(context.Background(), fmt.Sprintf("scp://%s%s/%s", s.host, s.remotePath, s.key), s.auth)
+	if err != nil {
+		os.Remove(f.Name())
+		return "", err
+	}
+	logrus.Infof("copied %s%s/%s", s.host, s.remotePath, s.key)
+	_, err = f.Write(reader)
 	if err != nil {
 		return "", err
 	}
-	logrus.Infof("copied %s", fmt.Sprintf("%s/%s",s.remotePath,s.key))
+
 	return extract(f.Name())
 }

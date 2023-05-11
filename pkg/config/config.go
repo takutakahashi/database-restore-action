@@ -54,12 +54,14 @@ type BackupS3 struct {
 }
 
 type BackupScp struct {
-	Host string `yaml:"host"`
-	Port string `yaml:"port"`
-	User string `yaml:"user"`
-	Path string `yaml:"path"`
-	SshKey string `yaml:"sshKey"`
-	Key  string `yaml:"key"`
+	Host       string `yaml:"host"`
+	Port       string `yaml:"port"`
+	User       string `yaml:"user"`
+	Path       string `yaml:"path"`
+	SshKey     string `yaml:"sshKey"`
+	PassPhrase string `yaml:"passPhrase"`
+	Password   string `yaml:"password"`
+	Key        string `yaml:"key"`
 }
 
 type DatabaseType string
