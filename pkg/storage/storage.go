@@ -178,7 +178,7 @@ func NewScp(cfg *config.Config) (*Scp, error) {
 	} else if cfg.Backup.Scp.Password != "" {
 		auth = option.NewBasicAuth(cfg.Backup.Scp.User, cfg.Backup.Scp.Password)
 	} else {
-		return nil, fmt.Errorf("No authentication method")
+		return nil, fmt.Errorf("no authentication method")
 	}
 
 	service := afs.New()
