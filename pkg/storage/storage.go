@@ -4,12 +4,18 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"text/template"
 	"time"
+
+	"github.com/viant/afs"
+	option "github.com/viant/afs/option"
+	scp "github.com/viant/afs/scp"
+	"github.com/viant/afs/storage"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -23,6 +29,14 @@ type S3 struct {
 	bucket  string
 	key     string
 	session *session.Session
+}
+
+type Scp struct {
+	remotePath string
+	key        string
+	host       string
+	client     afs.Service
+	auth       storage.Option
 }
 
 func NewS3(cfg *config.Config) (*S3, error) {
@@ -155,4 +169,49 @@ func extract(filename string) (string, error) {
 func splitExt(filename string) (string, string) {
 	ext := filepath.Ext(filename)
 	return filename[:len(filename)-len(ext)], ext
+}
+
+func NewScp(cfg *config.Config) (*Scp, error) {
+	var auth storage.Option
+	if cfg.Backup.Scp.SshKey != "" {
+		auth = scp.NewKeyAuth(cfg.Backup.Scp.SshKey, cfg.Backup.Scp.User, cfg.Backup.Scp.SshKey)
+	} else if cfg.Backup.Scp.Password != "" {
+		auth = option.NewBasicAuth(cfg.Backup.Scp.User, cfg.Backup.Scp.Password)
+	} else {
+		return nil, fmt.Errorf("no authentication method")
+	}
+
+	service := afs.New()
+	key, err := setKey(cfg.Backup.Scp.Key)
+	if err != nil {
+		return nil, err
+	}
+	return &Scp{
+		client:     service,
+		key:        key,
+		auth:       auth,
+		host:       cfg.Backup.Scp.Host,
+		remotePath: cfg.Backup.Scp.Path,
+	}, nil
+}
+
+func (s Scp) Download() (string, error) {
+	f, err := os.Create(fmt.Sprintf("/tmp/%s", filepath.Base(s.key)))
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	logrus.Infof("copying %s%s/%s", s.host, s.remotePath, s.key)
+	reader, err := s.client.DownloadWithURL(context.Background(), fmt.Sprintf("scp://%s%s/%s", s.host, s.remotePath, s.key), s.auth)
+	if err != nil {
+		os.Remove(f.Name())
+		return "", err
+	}
+	logrus.Infof("copied %s%s/%s", s.host, s.remotePath, s.key)
+	_, err = f.Write(reader)
+	if err != nil {
+		return "", err
+	}
+
+	return extract(f.Name())
 }

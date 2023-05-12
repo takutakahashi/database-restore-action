@@ -236,6 +236,19 @@ func (d Database) Restore() error {
 		return restoreLocal(d.cfg, localPath)
 
 	}
+
+	if d.cfg.Backup.Scp.Host != "" && d.cfg.Backup.Scp.User != "" && d.cfg.Backup.Scp.Path != "" {
+		s, err := storage.NewScp(d.cfg)
+		if err != nil {
+			return err
+		}
+		localPath, err := s.Download()
+		if err != nil {
+			return err
+		}
+		defer os.Remove(localPath)
+		return restoreLocal(d.cfg, localPath)
+	}
 	return fmt.Errorf("not implemented")
 }
 
