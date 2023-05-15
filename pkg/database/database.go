@@ -237,7 +237,7 @@ func (d Database) Restore() error {
 
 	}
 
-	if d.cfg.Backup.Scp.Host != "" && d.cfg.Backup.Scp.User != "" && d.cfg.Backup.Scp.Path != "" {
+	if d.cfg.Backup.Scp.Host != "" && d.cfg.Backup.Scp.User != "" && d.cfg.Backup.Scp.Key != "" {
 		s, err := storage.NewScp(d.cfg)
 		if err != nil {
 			return err

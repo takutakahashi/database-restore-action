@@ -57,7 +57,6 @@ type BackupScp struct {
 	Host       string `yaml:"host"`
 	Port       string `yaml:"port"`
 	User       string `yaml:"user"`
-	Path       string `yaml:"path"`
 	SshKey     string `yaml:"sshKey"`
 	PassPhrase string `yaml:"passPhrase"`
 	Password   string `yaml:"password"`

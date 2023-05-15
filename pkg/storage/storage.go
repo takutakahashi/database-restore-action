@@ -32,7 +32,6 @@ type S3 struct {
 }
 
 type Scp struct {
-	remotePath string
 	key        string
 	host       string
 	client     afs.Service
@@ -184,6 +183,7 @@ func NewScp(cfg *config.Config) (*Scp, error) {
 	service := afs.New()
 	key, err := setKey(cfg.Backup.Scp.Key)
 	if err != nil {
+		fmt.Println("aaaa")
 		return nil, err
 	}
 	return &Scp{
@@ -191,7 +191,6 @@ func NewScp(cfg *config.Config) (*Scp, error) {
 		key:        key,
 		auth:       auth,
 		host:       cfg.Backup.Scp.Host,
-		remotePath: cfg.Backup.Scp.Path,
 	}, nil
 }
 
@@ -201,13 +200,13 @@ func (s Scp) Download() (string, error) {
 		return "", err
 	}
 	defer f.Close()
-	logrus.Infof("copying %s%s/%s", s.host, s.remotePath, s.key)
-	reader, err := s.client.DownloadWithURL(context.Background(), fmt.Sprintf("scp://%s%s/%s", s.host, s.remotePath, s.key), s.auth)
+	logrus.Infof("copying %s%s", s.host,  s.key)
+	reader, err := s.client.DownloadWithURL(context.Background(), fmt.Sprintf("scp://%s%s", s.host, s.key), s.auth)
 	if err != nil {
 		os.Remove(f.Name())
 		return "", err
 	}
-	logrus.Infof("copied %s%s/%s", s.host, s.remotePath, s.key)
+	logrus.Infof("copied %s%s", s.host, s.key)
 	_, err = f.Write(reader)
 	if err != nil {
 		return "", err
