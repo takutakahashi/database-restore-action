@@ -183,7 +183,6 @@ func NewScp(cfg *config.Config) (*Scp, error) {
 	service := afs.New()
 	key, err := setKey(cfg.Backup.Scp.Key)
 	if err != nil {
-		fmt.Println("aaaa")
 		return nil, err
 	}
 	return &Scp{
