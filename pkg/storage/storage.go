@@ -32,10 +32,10 @@ type S3 struct {
 }
 
 type Scp struct {
-	key        string
-	host       string
-	client     afs.Service
-	auth       storage.Option
+	key    string
+	host   string
+	client afs.Service
+	auth   storage.Option
 }
 
 func NewS3(cfg *config.Config) (*S3, error) {
@@ -172,10 +172,13 @@ func splitExt(filename string) (string, string) {
 
 func NewScp(cfg *config.Config) (*Scp, error) {
 	var auth storage.Option
-	if cfg.Backup.Scp.SshKey != "" {
-		auth = scp.NewKeyAuth(cfg.Backup.Scp.SshKey, cfg.Backup.Scp.User, cfg.Backup.Scp.SshKey)
-	} else if cfg.Backup.Scp.Password != "" {
-		auth = option.NewBasicAuth(cfg.Backup.Scp.User, cfg.Backup.Scp.Password)
+	sshKey := os.Getenv("SSH_KEY")
+	passPhrase := os.Getenv("SSH_PASSPHRASE")
+	password := os.Getenv("SSH_PASSWORD")
+	if sshKey != "" {
+		auth = scp.NewKeyAuth(sshKey, cfg.Backup.Scp.User, passPhrase)
+	} else if password != "" {
+		auth = option.NewBasicAuth(cfg.Backup.Scp.User, password)
 	} else {
 		return nil, fmt.Errorf("no authentication method")
 	}
@@ -185,11 +188,12 @@ func NewScp(cfg *config.Config) (*Scp, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &Scp{
-		client:     service,
-		key:        key,
-		auth:       auth,
-		host:       cfg.Backup.Scp.Host,
+		client: service,
+		key:    key,
+		auth:   auth,
+		host:   cfg.Backup.Scp.Host,
 	}, nil
 }
 
@@ -199,7 +203,7 @@ func (s Scp) Download() (string, error) {
 		return "", err
 	}
 	defer f.Close()
-	logrus.Infof("copying %s%s", s.host,  s.key)
+	logrus.Infof("copying %s%s", s.host, s.key)
 	reader, err := s.client.DownloadWithURL(context.Background(), fmt.Sprintf("scp://%s%s", s.host, s.key), s.auth)
 	if err != nil {
 		os.Remove(f.Name())
