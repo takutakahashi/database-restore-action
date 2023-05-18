@@ -41,8 +41,9 @@ var (
 )
 
 type DatabaseBackup struct {
-	Local string   `yaml:"local,omitempty"`
-	S3    BackupS3 `yaml:"s3"`
+	Local string    `yaml:"local,omitempty"`
+	S3    BackupS3  `yaml:"s3"`
+	Scp   BackupScp `yaml:"scp"`
 }
 
 type BackupS3 struct {
@@ -50,6 +51,13 @@ type BackupS3 struct {
 	Key     string `yaml:"key"`
 	Profile string `yaml:"profile"`
 	Region  string `yaml:"region"`
+}
+
+type BackupScp struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+	User string `yaml:"user"`
+	Key  string `yaml:"key"`
 }
 
 type DatabaseType string
