@@ -226,7 +226,7 @@ func (s Scp) Download() (string, error) {
 	err = s.client.CopyFromRemote(context.Background(), f, s.key)
 	logrus.Infof("copyid %s%s", s.host, s.key)
 	if err != nil {
-		fmt.Println("Error while copying file ", err)
+		return "", err
 	}
 
 	return extract(f.Name())
